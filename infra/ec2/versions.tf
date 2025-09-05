@@ -14,10 +14,10 @@ terraform {
 // separately from the 'global' stack.
 terraform {
   backend "s3" {
-    bucket         = "YARD-REAAS-TFSTATE-BUCKET-ISMINIZ" // Use the same S3 bucket
+    bucket         = "sarper-erkol-tfstate-bucket" // Use the same S3 bucket
     key            = "ec2/terraform.tfstate"           // Unique key for the EC2 state
     region         = "us-east-1"
-    dynamodb_table = "YARD-REAAS-TFSTATE-LOCK-TABLOSU" // Use the same DynamoDB table
+    dynamodb_table = "terraform-lock-table" // Use the same DynamoDB table
     encrypt        = true
   }
 }

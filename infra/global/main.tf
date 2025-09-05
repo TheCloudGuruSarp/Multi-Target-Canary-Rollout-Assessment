@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:KULLANICI_ADINIZ/REPO_ADINIZ:*"] // IMPORTANT: Change this line
+      values   = ["repo:TheCloudGuruSarp/Multi-Target-Canary-Rollout-Assessment:*"] // IMPORTANT: Change this line
     }
   }
 }
@@ -66,7 +66,6 @@ resource "aws_secretsmanager_secret_version" "app_secret_v1" {
   secret_id     = aws_secretsmanager_secret.app_secret.id
   secret_string = "initial-super-secret-value-12345"
 }
-
 # --- CloudWatch Dashboard ---
 # A unified dashboard to monitor the health of both EC2 and Lambda targets.
 resource "aws_cloudwatch_dashboard" "main" {
@@ -83,13 +82,13 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "ALB & API Gateway - Request Count & 5xx Errors",
           view   = "timeSeries",
           stacked = false,
+          region = "us-east-1",
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "podinfo-alb", { label = "ALB Requests" }],
             [".", "HTTPCode_Target_5XX_Count", ".", ".", { label = "ALB 5xx Errors", yAxis = "right" }],
             ["AWS/ApiGateway", "Count", "ApiName", "podinfo-lambda-api", { label = "API GW Requests" }],
             [".", "5xx", ".", ".", { label = "API GW 5xx Errors", yAxis = "right" }]
-          ],
-          region = "us-east-1"
+          ]
         }
       },
       {
@@ -102,12 +101,12 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "Lambda Performance",
           view   = "timeSeries",
           stacked = false,
+          region = "us-east-1",
           metrics = [
-            ["AWS/Lambda", "Duration", "FunctionName", "podinfo-lambda", { stat = "p95" }],
-            [".", "Errors", ".", ".", { yAxis = "right", stat = "Sum" }],
-            [".", "Throttles", ".", ".", { yAxis = "right", stat = "Sum" }]
-          ],
-          region = "us-east-1"
+            ["AWS/Lambda", "Duration", "FunctionName", "podinfo-lambda", { stat = "p95", label = "Duration (p95)" }],
+            [".", "Errors", ".", ".", { yAxis = "right", stat = "Sum", label = "Errors" }],
+            [".", "Throttles", ".", ".", { yAxis = "right", stat = "Sum", label = "Throttles" }]
+          ]
         }
       },
       {
@@ -120,11 +119,12 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "EC2 Host Metrics (Avg)",
           view   = "timeSeries",
           stacked = false,
+          region = "us-east-1",
           metrics = [
-            ["CWAgent", "cpu_usage_idle", "AutoScalingGroupName", "podinfo-asg", "ImageId", "*", "InstanceId", "*", "InstanceType", "*", { label = "CPU Idle", invert = true }],
-            ["CWAgent", "mem_used_percent", "AutoScalingGroupName", "podinfo-asg", "ImageId", "*", "InstanceId", "*", "InstanceType", "*", { label = "Memory Used %" }]
-          ],
-          region = "us-east-1"
+            // CORRECTED METRIC DEFINITIONS FOR CWAGENT
+            ["CWAgent", "cpu_usage_active", "AutoScalingGroupName", "podinfo-asg", { label = "CPU Usage %", stat = "Average" }],
+            ["CWAgent", "mem_used_percent", "AutoScalingGroupName", "podinfo-asg", { label = "Memory Used %", stat = "Average" }]
+          ]
         }
       }
     ]

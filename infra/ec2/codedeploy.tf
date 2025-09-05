@@ -36,15 +36,10 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN"
   }
-  # Automatically roll back if a deployment fails OR if alarms are triggered.
-  auto_rollback_configuration {
-    enabled = true
-    events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
-  }
 
   # Link the alarm to this deployment group
   alarm_configuration {
-    alarms  = [aws_cloudwatch_metric_alarm.ec2_unhealthy_hosts.name]
+    alarms  = [aws_cloudwatch_metric_alarm.ec2_unhealthy_hosts.alarm_name]
     enabled = true
   }
 

@@ -4,5 +4,5 @@
 variable "ami_id" {
   description = "The AMI ID for EC2 instances (Amazon Linux 2)"
   type        = string
-  default     = "ami-0c55b159cbfafe1f0" // us-east-1
+  default     = "ami-00ca32bbc84273381" // us-east-1
 }

@@ -5,7 +5,7 @@ set -e
 # Define variables
 AWS_REGION="us-east-1"
 SECRET_NAME="/dockyard/SUPER_SECRET_TOKEN"
-ECR_REPOSITORY_URI="YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/podinfo" # IMPORTANT: Replace with your ECR URI
+ECR_REPOSITORY_URI="727699166508.dkr.ecr.us-east-1.amazonaws.com/podinfo" # IMPORTANT: Replace with your ECR URI
 IMAGE_TAG=$(cat /tmp/image_tag.txt) # We will create this file during deployment
 
 # Get the secret value from AWS Secrets Manager

@@ -33,8 +33,7 @@ resource "aws_lambda_function" "podinfo" {
 
   // For the initial setup, we use a public placeholder image.
   // Our CI/CD pipeline will replace this with our own custom-built image URI during deployment.
-  image_uri = "public.ecr.aws/l0g8r8j6/podinfo:latest"
-
+  image_uri = "public.ecr.aws/lambda/python:3.9"
   // 'publish = true' creates a new, numbered version of the function each time it's updated.
   // This is required for CodeDeploy to manage versions.
   publish = true

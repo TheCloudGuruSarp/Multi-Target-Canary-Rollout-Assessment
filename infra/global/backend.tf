@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "YARD-REAAS-TFSTATE-BUCKET-ISMINIZ"
+    bucket         = "sarper-erkol-tfstate-bucket"
     key            = "global/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "YARD-REAAS-TFSTATE-LOCK-TABLOSU"
+    dynamodb_table = "terraform-lock-table"
     encrypt        = true
   }
 }

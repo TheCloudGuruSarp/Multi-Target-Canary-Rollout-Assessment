@@ -30,26 +30,18 @@ resource "aws_codedeploy_deployment_group" "lambda_dg" {
   deployment_group_name = "podinfo-lambda-canary-dg"
   service_role_arn      = aws_iam_role.codedeploy_lambda_role.arn
 
-  // This pre-defined configuration shifts 10% of traffic to the new version for 5 minutes.
   deployment_config_name = "CodeDeployDefault.LambdaCanary10Percent5Minutes"
 
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
-    deployment_type   = "BLUE_GREEN" // For Lambda, this enables canary or linear deployments
+    deployment_type   = "BLUE_GREEN"
   }
-  # Automatically roll back on failure or alarms.
+
   auto_rollback_configuration {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
   }
 
-  # Link the Lambda error alarm to this deployment group.
-  alarm_configuration {
-    alarms  = [aws_cloudwatch_metric_alarm.lambda_errors.name]
-    enabled = true
-  }
-
-  // Tells CodeDeploy which Lambda function and alias to manage.
   blue_green_deployment_config {
     deployment_ready_option {
       action_on_timeout = "CONTINUE_DEPLOYMENT"
@@ -60,17 +52,12 @@ resource "aws_codedeploy_deployment_group" "lambda_dg" {
     }
   }
 
-  lambda_function_info {
-    function_name = aws_lambda_function.podinfo.function_name
-    function_alias = aws_lambda_alias.live.name
-  }
-
-  // Automatically roll back if a deployment fails.
-  auto_rollback_configuration {
+  alarm_configuration {
+    alarms  = [aws_cloudwatch_metric_alarm.lambda_errors.alarm_name]
     enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
   }
 }
+
 
 # This alarm will trigger if the new Lambda version produces errors.
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
