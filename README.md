@@ -1,4 +1,4 @@
-#Multi-target Canary Rollout
+# Multi-Target Canary Rollout
 
 This project implements a reproducible, secure deployment system that builds, signs, and ships a container from GitHub Actions into AWS, then rolls it out in parallel to AWS Lambda and a dual-host EC2/ALB stack.
 
