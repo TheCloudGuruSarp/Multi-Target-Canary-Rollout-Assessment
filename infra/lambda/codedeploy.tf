@@ -37,6 +37,17 @@ resource "aws_codedeploy_deployment_group" "lambda_dg" {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN" // For Lambda, this enables canary or linear deployments
   }
+  # Automatically roll back on failure or alarms.
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
+  }
+
+  # Link the Lambda error alarm to this deployment group.
+  alarm_configuration {
+    alarms  = [aws_cloudwatch_metric_alarm.lambda_errors.name]
+    enabled = true
+  }
 
   // Tells CodeDeploy which Lambda function and alias to manage.
   blue_green_deployment_config {
@@ -58,5 +69,22 @@ resource "aws_codedeploy_deployment_group" "lambda_dg" {
   auto_rollback_configuration {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE"]
+  }
+}
+
+# This alarm will trigger if the new Lambda version produces errors.
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  alarm_name          = "Podinfo-Lambda-High-Error-Rate"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "60" # 1 minute
+  statistic           = "Sum"
+  threshold           = "5" # More than 5 errors in 1 minute
+  alarm_description   = "Triggers a rollback if the new Lambda version has excessive errors."
+  dimensions = {
+    FunctionName = aws_lambda_function.podinfo.function_name
+    Resource     = "${aws_lambda_function.podinfo.function_name}:${aws_lambda_alias.live.name}"
   }
 }

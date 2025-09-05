@@ -36,6 +36,17 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN"
   }
+  # Automatically roll back if a deployment fails OR if alarms are triggered.
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
+  }
+
+  # Link the alarm to this deployment group
+  alarm_configuration {
+    alarms  = [aws_cloudwatch_metric_alarm.ec2_unhealthy_hosts.name]
+    enabled = true
+  }
 
   // How CodeDeploy should handle traffic shifting and instance termination.
   blue_green_deployment_config {
@@ -67,5 +78,23 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
   auto_rollback_configuration {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
+  }
+}
+
+# This alarm will trigger if the new 'green' target group has unhealthy hosts
+# for too long during a deployment.
+resource "aws_cloudwatch_metric_alarm" "ec2_unhealthy_hosts" {
+  alarm_name          = "Podinfo-EC2-Unhealthy-Hosts-During-Deployment"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "HealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "1" # Should have at least 1 healthy host in the green group
+  alarm_description   = "Triggers a rollback if the green target group does not stabilize."
+  dimensions = {
+    TargetGroup    = aws_lb_target_group.green.arn_suffix
+    LoadBalancer = aws_lb.main.arn_suffix
   }
 }

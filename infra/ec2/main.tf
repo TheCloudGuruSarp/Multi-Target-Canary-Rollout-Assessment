@@ -192,3 +192,28 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   name = "podinfo-ec2-instance-profile"
   role = aws_iam_role.ec2_role.name
 }
+
+data "aws_iam_policy_document" "secret_read_policy" {
+  statement {
+    sid    = "AllowSecretRead"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+    # It's best practice to scope this down to the specific secret ARN
+    # For simplicity in this step, we'll allow access to secrets with a specific tag or path later.
+    resources = [
+      "*" # In a real prod environment, you would lock this down to the secret's ARN
+    ]
+  }
+}
+
+resource "aws_iam_policy" "secret_read" {
+  name   = "podinfo-secret-read-policy"
+  policy = data.aws_iam_policy_document.secret_read_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.secret_read.arn
+}

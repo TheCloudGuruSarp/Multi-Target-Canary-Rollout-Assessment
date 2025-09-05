@@ -79,3 +79,12 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*"
 }
+# Add this inside infra/lambda/main.tf
+
+# We need to grant the Lambda execution role permission to read the secret.
+resource "aws_iam_role_policy_attachment" "lambda_secret_access" {
+  role       = aws_iam_role.lambda_exec_role.name
+  # This is a managed policy, but for fine-grained control, you'd create your own
+  # similar to the EC2 stack. For simplicity, we'll attach a broad permission here.
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # Note: In production, create a read-only policy!
+}

@@ -1,0 +1,21 @@
+{
+  "agent": {
+    "run_as_user": "root"
+  },
+  "logs": {
+    "logs_collected": {
+      "docker": {
+        "log_stream_name": "docker-logs-{instance_id}",
+        "log_group_name": "/app/docker-logs",
+        "files": {
+          "collect_list": [
+            {
+              "file_path": "/var/lib/docker/containers/*/*.log",
+              "timestamp_format": "%Y-%m-%dT%H:%M:%S.%NZ"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
