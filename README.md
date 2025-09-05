@@ -2,7 +2,9 @@
 
 This project implements a reproducible, secure deployment system that builds, signs, and ships a container from GitHub Actions into AWS, then rolls it out in parallel to AWS Lambda and a dual-host EC2/ALB stack.
 
-![Yard Reaas Logo](https://www.yardre.it/assets/images/logo_palla.png)
+<p align="center">
+  <img src="https://www.yardre.it/assets/images/logo_palla.png" alt="Yard Reaas Logo" width="200">
+</p>
 
 ## ✨ Developed by Sarper ✨
 
