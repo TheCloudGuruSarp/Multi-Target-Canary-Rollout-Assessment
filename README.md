@@ -2,6 +2,8 @@
 
 This project implements a reproducible, secure deployment system that builds, signs, and ships a container from GitHub Actions into AWS, then rolls it out in parallel to AWS Lambda and a dual-host EC2/ALB stack.
 
+![Yard Reaas Logo](https://www.yardre.it/assets/images/logo_palla.png)
+
 ## ✨ Developed by Sarper ✨
 
 [![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-blue?logo=githubactions)](https://github.com/features/actions)
@@ -27,7 +29,7 @@ This project implements a reproducible, secure deployment system that builds, si
 * A GitHub Personal Access Token (PAT) with `repo` scope for `gh auth login`.
 
 ---
-## 1. Bootstrap (Sıfırdan Kurulum)
+## 1. Bootstrap
 1.  **Clone the Repository:**
     ```bash
     git clone <your-repo-url>
@@ -65,7 +67,7 @@ This project implements a reproducible, secure deployment system that builds, si
     In the GitHub repository settings, add the `AWS_IAM_ROLE_ARN` secret with the value from the `global` stack's Terraform output.
 
 ---
-## 2. Operate (Kullanım ve Dağıtım)
+## 2. Operate
 The CI/CD pipeline is fully automated. To trigger a new deployment to the `development` environment:
 1.  Make a code change.
 2.  Push the change to the `main` branch.
@@ -75,14 +77,14 @@ The CI/CD pipeline is fully automated. To trigger a new deployment to the `devel
 This will trigger the `build-and-push.yml` workflow, which upon success will trigger the `deploy.yml` workflow, deploying to both EC2 and Lambda targets.
 
 ---
-## 3. Promote to Production (Prod'a Yükseltme)
+## 3. Promote to Production
 1.  After a successful deployment to the `dev` environment, the `deploy.yml` workflow will pause at the "Approve for Production" step.
 2.  Go to the "Actions" tab in the GitHub repository.
 3.  Find the running workflow and click "Review deployments".
 4.  Select the "production" environment and click "Approve and deploy".
 
 ---
-## 4. Destroy (Altyapıyı Temizleme)
+## 4. Destroy
 To avoid incurring costs, destroy all created infrastructure by running `terraform destroy` in the reverse order of creation.
 ```bash
 # Lambda Stack
