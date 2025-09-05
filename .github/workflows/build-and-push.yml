@@ -1,0 +1,69 @@
+# .github/workflows/build-and-push.yml
+
+name: Build, Sign, and Push Image
+
+# This workflow runs whenever a push is made to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+# Environment variables available to all jobs in the workflow
+env:
+  # The ECR repository name created by our Terraform 'global' stack
+  ECR_REPOSITORY: podinfo
+  # The image tag will be the short SHA of the git commit
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    name: Build and Push to ECR
+    runs-on: ubuntu-latest
+
+    # These permissions are required for OIDC authentication with AWS
+    # and for cosign to write attestations to the repo.
+    permissions:
+      id-token: write # Required for AWS OIDC
+      contents: read  # Required to checkout the code
+      packages: write # Required to push container images to ECR/GHCR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # The AWS region where our ECR repository exists
+          aws-region: us-east-1
+          # The ARN of the IAM role created by our Terraform 'global' stack
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          role-session-name: GitHubActionsBuildSession
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # The Dockerfile to build. Assuming it's in the root.
+          # We might need to create this Dockerfile next.
+          file: ./Dockerfile 
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+        
+      - name: Sign the container image
+        run: |
+          cosign sign --yes ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build-image.outputs.digest }}
+
+      - name: Echo Image URI
+        run: echo "Pushed image URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build-image.outputs.digest }}"
