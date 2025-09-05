@@ -2,6 +2,20 @@ Multi-target Canary Rollout
 
 This project implements a reproducible, secure deployment system that builds, signs, and ships a container from GitHub Actions into AWS, then rolls it out in parallel to AWS Lambda and a dual-host EC2/ALB stack.
 
+## ✨ Developed by Sarper ✨
+
+[![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-blue?logo=githubactions)](https://github.com/features/actions)
+[![IaC](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
+[![Cloud](https://img.shields.io/badge/Cloud-AWS-orange?logo=amazonaws)](https://aws.amazon.com/)
+[![Containerization](https://img.shields.io/badge/Container-Docker-blue?logo=docker)](https://www.docker.com/)
+[![Registry](https://img.shields.io/badge/Registry-Amazon_ECR-orange?logo=amazonaws)](https://aws.amazon.com/ecr/)
+
+[![Target](https://img.shields.io/badge/Target-Amazon_EC2-green?logo=amazonec2)](https://aws.amazon.com/ec2/)
+[![Target](https://img.shields.io/badge/Target-AWS_Lambda-yellow?logo=awslambda)](https://aws.amazon.com/lambda/)
+[![Strategy](https://img.shields.io/badge/Strategy-Blue/Green-informational)](https://martinfowler.com/bliki/BlueGreenDeployment.html)
+[![Observability](https://img.shields.io/badge/Observability-CloudWatch-blueviolet?logo=amazoncloudwatch)](https://aws.amazon.com/cloudwatch/)
+[![Security](https://img.shields.io/badge/Security-Cosign_Signing-critical)](https://www.sigstore.dev/)
+
 ## Architecture Diagram
 ![Architecture](docs/diagram.svg)
 
