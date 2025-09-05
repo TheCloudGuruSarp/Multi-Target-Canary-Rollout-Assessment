@@ -151,7 +151,7 @@ resource "aws_launch_template" "main" {
 resource "aws_autoscaling_group" "main" {
   name                = "podinfo-asg"
   desired_capacity    = 2
-  max_size            = 2
+  max_size            = 5
   min_size            = 2
   vpc_zone_identifier = [aws_subnet.public_a.id, aws_subnet.public_b.id]
   launch_template {
@@ -216,4 +216,39 @@ resource "aws_iam_policy" "secret_read" {
 resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.secret_read.arn
+}
+
+# --- EC2 Auto Scaling Policy ---
+# Register our Auto Scaling Group as a scalable target.
+resource "aws_appautoscaling_target" "asg_target" {
+  max_capacity       = 5 # Must match the ASG's max_size
+  min_capacity       = 2 # Must match the ASG's min_size
+  resource_id        = "autoScalingGroup/${aws_autoscaling_group.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount" # This is a standard value for ASGs
+  service_namespace  = "ecs"                       # This is a standard value for ASGs
+}
+
+# Define the target tracking scaling policy.
+# This policy will try to keep the average number of requests per instance at 100.
+resource "aws_appautoscaling_policy" "requests_per_target" {
+  name               = "alb-requests-per-target"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.asg_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.asg_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.asg_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value = 100 # Target 100 requests per minute per instance
+
+    predefined_metric_specification {
+      # Use the built-in metric for ALB Request Count Per Target.
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      # The resource label points to our ALB and the 'blue' target group.
+      resource_label         = "${aws_lb.main.arn_suffix}/${aws_lb_target_group.blue.arn_suffix}"
+    }
+
+    # Cooldown periods to prevent the ASG from scaling up and down too rapidly ("thrashing").
+    scale_in_cooldown  = 300 # Wait 5 minutes before scaling in
+    scale_out_cooldown = 120 # Wait 2 minutes before scaling out again
+  }
 }
