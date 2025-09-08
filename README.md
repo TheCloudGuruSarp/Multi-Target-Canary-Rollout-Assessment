@@ -23,6 +23,19 @@ This project implements a reproducible, secure deployment system that builds, si
 ## Architecture Diagram
 ![Architecture](docs/diagram.svg)
 
+## Project Structure
+The repository is structured to separate concerns like infrastructure, CI/CD workflows, and scripts.
+
+| Path                  | Description                                                                 |
+| --------------------- | --------------------------------------------------------------------------- |
+| `.github/workflows/`  | Contains all GitHub Actions CI/CD pipeline definitions.                     |
+| `docs/`               | Contains supporting documentation, including the architecture diagram.      |
+| `infra/`              | Contains all Terraform code, organized into layers (`global`, `ec2`, `lambda`). |
+| `scripts/`            | Contains deployment and utility scripts used by the infrastructure.         |
+| `Dockerfile`          | Defines the steps to build the application's container image.               |
+| `appspec.yml`         | The specification file for AWS CodeDeploy to manage EC2 deployments.        |
+| `appspec-lambda.yml`  | The specification file for AWS CodeDeploy to manage Lambda deployments.     |
+
 ---
 ## Prerequisites
 * An AWS account with Administrator privileges.
