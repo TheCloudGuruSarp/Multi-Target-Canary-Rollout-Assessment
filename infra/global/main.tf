@@ -1,6 +1,3 @@
-// --- Elastic Container Registry (ECR) ---
-// ECR repository to store our podinfo container images.
-// Tag immutability prevents overwriting an image tag, which is a best practice.
 resource "aws_ecr_repository" "podinfo" {
   name                 = "podinfo"
   image_tag_mutability = "IMMUTABLE"
@@ -10,8 +7,6 @@ resource "aws_ecr_repository" "podinfo" {
   }
 }
 
-// --- IAM & OIDC for GitHub Actions ---
-// OIDC provider for GitHub Actions to enable passwordless authentication.
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
@@ -22,8 +17,6 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = ["6938fd4d9c6d15aaa29c34eBCb858ddc39a03d97"]
 }
 
-// IAM policy document that specifies the trust relationship.
-// It allows entities from our specific GitHub repo to assume this role.
 data "aws_iam_policy_document" "github_actions_assume_role" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -42,32 +35,24 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
   }
 }
 
-// The IAM role that GitHub Actions will assume.
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-role"
   assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
 }
 
-// Attach a policy to the role.
-// For now, we'll grant power user access to ECR. This can be scoped down later.
 resource "aws_iam_role_policy_attachment" "ecr_access" {
   role       = aws_iam_role.github_actions.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
-# --- Secrets Manager ---
-# The secret that our application will use.
 resource "aws_secretsmanager_secret" "app_secret" {
   name = "/dockyard/SUPER_SECRET_TOKEN"
   description = "Super secret token for the Podinfo application"
 }
 
-# The initial value for our secret.
 resource "aws_secretsmanager_secret_version" "app_secret_v1" {
   secret_id     = aws_secretsmanager_secret.app_secret.id
   secret_string = "initial-super-secret-value-12345"
 }
-# --- CloudWatch Dashboard ---
-# A unified dashboard to monitor the health of both EC2 and Lambda targets.
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "Podinfo-Multi-Target-Dashboard"
   dashboard_body = jsonencode({

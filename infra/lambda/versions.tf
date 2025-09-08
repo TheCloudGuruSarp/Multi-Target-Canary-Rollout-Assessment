@@ -1,4 +1,3 @@
-// Standard Terraform and AWS provider configuration.
 terraform {
   required_version = ">= 1.5.0"
 
@@ -10,7 +9,6 @@ terraform {
   }
 }
 
-// Configure the S3 backend for the Lambda stack's state.
 terraform {
   backend "s3" {
     bucket         = "sarper-erkol-tfstate-bucket" // Use the same S3 bucket

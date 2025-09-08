@@ -1,5 +1,3 @@
-// --- Networking (VPC) ---
-// A dedicated VPC to isolate our application's network traffic.
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -7,7 +5,6 @@ resource "aws_vpc" "main" {
   tags                 = { Name = "podinfo-vpc" }
 }
 
-// We need subnets in at least two Availability Zones for high availability.
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -24,13 +21,11 @@ resource "aws_subnet" "public_b" {
   tags                    = { Name = "public-subnet-b" }
 }
 
-// An Internet Gateway to allow communication between the VPC and the internet.
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "podinfo-igw" }
 }
 
-// A route table to direct internet-bound traffic to the Internet Gateway.
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
   route {
@@ -50,9 +45,6 @@ resource "aws_route_table_association" "b" {
   route_table_id = aws_route_table.public.id
 }
 
-// --- Security Groups ---
-// Security group for the Application Load Balancer.
-// It allows inbound HTTP traffic from anywhere.
 resource "aws_security_group" "alb" {
   name        = "podinfo-alb-sg"
   vpc_id      = aws_vpc.main.id
@@ -71,8 +63,6 @@ resource "aws_security_group" "alb" {
   }
 }
 
-// Security group for the EC2 instances.
-// It only allows traffic from our ALB on the application port.
 resource "aws_security_group" "ec2" {
   name        = "podinfo-ec2-sg"
   vpc_id      = aws_vpc.main.id
@@ -91,7 +81,6 @@ resource "aws_security_group" "ec2" {
   }
 }
 
-// --- Application Load Balancer ---
 resource "aws_lb" "main" {
   name               = "podinfo-alb"
   internal           = false
@@ -100,7 +89,6 @@ resource "aws_lb" "main" {
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 }
 
-// Two target groups are required for a blue/green deployment.
 resource "aws_lb_target_group" "blue" {
   name     = "podinfo-blue-tg"
   port     = 8080
@@ -121,7 +109,6 @@ resource "aws_lb_target_group" "green" {
   }
 }
 
-// The listener checks for incoming connections and forwards them to the blue group by default.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.id
   port              = 80
@@ -132,8 +119,6 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-// --- Compute (EC2 & ASG) ---
-// The Launch Template defines the configuration for our EC2 instances.
 resource "aws_launch_template" "main" {
   name_prefix   = "podinfo-"
   image_id      = var.ami_id
@@ -147,7 +132,6 @@ resource "aws_launch_template" "main" {
   }
 }
 
-// The Auto Scaling Group ensures we always have exactly two instances running.
 resource "aws_autoscaling_group" "main" {
   name                = "podinfo-asg"
   desired_capacity    = 2
@@ -162,8 +146,6 @@ resource "aws_autoscaling_group" "main" {
   }
 }
 
-// --- IAM Role for EC2 Instances ---
-// This role grants our EC2 instances permissions to interact with other AWS services.
 resource "aws_iam_role" "ec2_role" {
   name = "podinfo-ec2-instance-role"
   assume_role_policy = jsonencode({
@@ -176,7 +158,6 @@ resource "aws_iam_role" "ec2_role" {
   })
 }
 
-// Attach policies needed by the agents and the application.
 resource "aws_iam_role_policy_attachment" "ec2_ssm" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" // Good for debugging
@@ -220,9 +201,6 @@ resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
   policy_arn = aws_iam_policy.secret_read.arn
 }
 
-# --- EC2 Auto Scaling Policy (Correct Method) ---
-# This policy automatically scales the number of EC2 instances based on the
-# average number of requests each instance receives from the ALB.
 resource "aws_autoscaling_policy" "alb_requests_policy" {
   name                   = "alb-requests-per-target-policy"
   autoscaling_group_name = aws_autoscaling_group.main.name

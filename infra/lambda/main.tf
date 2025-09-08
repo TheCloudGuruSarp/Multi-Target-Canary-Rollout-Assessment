@@ -1,5 +1,3 @@
-// --- IAM Role for Lambda Function ---
-// This role grants the Lambda function permissions to run and access other AWS services.
 resource "aws_iam_role" "lambda_exec_role" {
   name = "podinfo-lambda-execution-role"
   assume_role_policy = jsonencode({
@@ -12,7 +10,6 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-// Attach necessary policies for logging to CloudWatch and pulling images from ECR.
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -23,8 +20,6 @@ resource "aws_iam_role_policy_attachment" "lambda_ecr_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-// --- Lambda Function ---
-// Defines the Lambda function, configured to run from a container image.
 resource "aws_lambda_function" "podinfo" {
   function_name = "podinfo-lambda"
   role          = aws_iam_role.lambda_exec_role.arn
@@ -39,37 +34,29 @@ resource "aws_lambda_function" "podinfo" {
   publish = true
 }
 
-// --- Lambda Alias ---
-// A Lambda alias is a pointer to a specific function version.
-// CodeDeploy performs traffic shifting by updating the weights on this alias.
 resource "aws_lambda_alias" "live" {
   name             = "live"
   function_name    = aws_lambda_function.podinfo.function_name
   function_version = aws_lambda_function.podinfo.version
 }
 
-// --- API Gateway (HTTP API) ---
-// A lightweight, low-cost API Gateway to act as the HTTP front door for our Lambda.
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "podinfo-lambda-api"
   protocol_type = "HTTP"
 }
 
-// The integration connects a route in our API to the Lambda function.
 resource "aws_apigatewayv2_integration" "lambda" {
   api_id           = aws_apigatewayv2_api.http_api.id
   integration_type = "AWS_PROXY"
   integration_uri  = aws_lambda_alias.live.invoke_arn // Point to the alias, not the function
 }
 
-// A default route that catches all requests ($default) and sends them to our Lambda integration.
 resource "aws_apigatewayv2_route" "default" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = "$default"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
-// This permission allows API Gateway to invoke our Lambda function.
 resource "aws_lambda_permission" "api_gw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
@@ -78,9 +65,7 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*"
 }
-# Add this inside infra/lambda/main.tf
 
-# We need to grant the Lambda execution role permission to read the secret.
 resource "aws_iam_role_policy_attachment" "lambda_secret_access" {
   role       = aws_iam_role.lambda_exec_role.name
   # This is a managed policy, but for fine-grained control, you'd create your own

@@ -1,5 +1,3 @@
-// --- IAM Role for CodeDeploy ---
-// This role grants CodeDeploy permissions to manage Lambda function versions and aliases.
 resource "aws_iam_role" "codedeploy_lambda_role" {
   name = "podinfo-codedeploy-lambda-role"
   assume_role_policy = jsonencode({
@@ -17,14 +15,11 @@ resource "aws_iam_role_policy_attachment" "codedeploy_lambda_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda"
 }
 
-// --- CodeDeploy Application ---
 resource "aws_codedeploy_app" "lambda_app" {
   name             = "podinfo-lambda"
   compute_platform = "Lambda"
 }
 
-// --- CodeDeploy Deployment Group ---
-// Defines the canary deployment strategy for our Lambda function.
 resource "aws_codedeploy_deployment_group" "lambda_dg" {
   app_name              = aws_codedeploy_app.lambda_app.name
   deployment_group_name = "podinfo-lambda-canary-dg"
@@ -59,7 +54,6 @@ resource "aws_codedeploy_deployment_group" "lambda_dg" {
 }
 
 
-# This alarm will trigger if the new Lambda version produces errors.
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "Podinfo-Lambda-High-Error-Rate"
   comparison_operator = "GreaterThanOrEqualToThreshold"
