@@ -1,6 +1,5 @@
 terraform {
   required_version = ">= 1.5.0"
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -8,17 +7,15 @@ terraform {
     }
   }
 }
-
 terraform {
   backend "s3" {
-    bucket         = "sarper-erkol-tfstate-bucket" // Use the same S3 bucket
-    key            = "lambda/terraform.tfstate"          // Unique key for the Lambda state
+    bucket         = "sarper-erkol-tfstate-bucket"
+    key            = "lambda/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-lock-table" // Use the same DynamoDB table
+    dynamodb_table = "terraform-lock-table"
     encrypt        = true
   }
 }
-
 provider "aws" {
   region = "us-east-1"
 }

@@ -52,7 +52,7 @@ jobs:
       - name: Sign the container image
         run: |
           cosign sign --yes ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build-image.outputs.digest }}
-      
+
       - name: Install Syft to generate SBOM
         uses: anchore/syft-action@v0.15.0
         with:

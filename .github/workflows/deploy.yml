@@ -12,7 +12,7 @@ jobs:
     name: Deploy to Development Environment
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
     env:
       AWS_REGION: us-east-1
       ECR_REPOSITORY: podinfo

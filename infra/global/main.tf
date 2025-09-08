@@ -1,45 +1,36 @@
 resource "aws_ecr_repository" "podinfo" {
   name                 = "podinfo"
   image_tag_mutability = "IMMUTABLE"
-
   image_scanning_configuration {
     scan_on_push = true
   }
 }
-
 resource "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-
+  url = "https:
   client_id_list = [
     "sts.amazonaws.com"
   ]
-
   thumbprint_list = ["6938fd4d9c6d15aaa29c34eBCb858ddc39a03d97"]
 }
-
 data "aws_iam_policy_document" "github_actions_assume_role" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
-
     principals {
       type        = "Federated"
       identifiers = [aws_iam_openid_connect_provider.github.arn]
     }
-
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:TheCloudGuruSarp/Multi-Target-Canary-Rollout-Assessment:*"] // IMPORTANT: Change this line
+      values   = ["repo:TheCloudGuruSarp/Multi-Target-Canary-Rollout-Assessment:*"]
     }
   }
 }
-
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-role"
   assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
 }
-
 resource "aws_iam_role_policy_attachment" "ecr_access" {
   role       = aws_iam_role.github_actions.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
@@ -48,7 +39,6 @@ resource "aws_secretsmanager_secret" "app_secret" {
   name = "/dockyard/SUPER_SECRET_TOKEN"
   description = "Super secret token for the Podinfo application"
 }
-
 resource "aws_secretsmanager_secret_version" "app_secret_v1" {
   secret_id     = aws_secretsmanager_secret.app_secret.id
   secret_string = "initial-super-secret-value-12345"

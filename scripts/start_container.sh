@@ -2,8 +2,8 @@ set -e
 
 AWS_REGION="us-east-1"
 SECRET_NAME="/dockyard/SUPER_SECRET_TOKEN"
-ECR_REPOSITORY_URI="727699166508.dkr.ecr.us-east-1.amazonaws.com/podinfo" # IMPORTANT: Replace with your ECR URI
-IMAGE_TAG=$(cat /tmp/image_tag.txt) # We will create this file during deployment
+ECR_REPOSITORY_URI="727699166508.dkr.ecr.us-east-1.amazonaws.com/podinfo"
+IMAGE_TAG=$(cat /tmp/image_tag.txt)
 
 echo "Fetching secret from Secrets Manager..."
 SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --region "$AWS_REGION" --query SecretString --output text)

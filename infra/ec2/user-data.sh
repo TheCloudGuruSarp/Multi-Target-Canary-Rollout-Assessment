@@ -5,7 +5,7 @@ yum install -y docker ruby wget
 service docker start
 usermod -a -G docker ec2-user
 
-CODEDEPLOY_BUCKET="aws-codedeploy-us-east-1" # Change if in a different region
+CODEDEPLOY_BUCKET="aws-codedeploy-us-east-1"
 CODEDEPLOY_KEY="latest/install"
 wget "https://${CODEDEPLOY_BUCKET}.s3.amazonaws.com/${CODEDEPLOY_KEY}"
 chmod +x ./install
