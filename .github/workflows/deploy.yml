@@ -45,11 +45,12 @@ jobs:
 
       - name: Deploy to Lambda via CodeDeploy
         run: |
-          # This part remains complex and will be tested once the account is active
-          # We will likely need to adjust the AppSpec content based on real Lambda versions
-          echo "Skipping Lambda deployment for now..."
+          aws deploy create-deployment \
+            --application-name podinfo-lambda \
+            --deployment-group-name podinfo-lambda-dg \
+            --description "Deploying commit ${{ env.IMAGE_TAG }} to Lambda" \
+            --revision '{"revisionType": "AppSpecContent", "appSpecContent": {"content": file://appspec-lambda.yml, "sha256": ""}}'
 
-      # --- GÜNCELLENMİŞ EC2 DAĞITIM ADIMI ---
       - name: Deploy to EC2 via CodeDeploy
         run: |
           aws deploy create-deployment \
