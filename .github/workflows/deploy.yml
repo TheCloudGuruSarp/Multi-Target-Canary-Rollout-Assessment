@@ -2,7 +2,6 @@
 
 name: Deploy to AWS
 
-# This workflow is triggered on the successful completion of the 'Build, Sign, and Push Image' workflow.
 on:
   workflow_run:
     workflows: ["Build, Sign, and Push Image"]
@@ -10,21 +9,16 @@ on:
       - completed
 
 jobs:
-  # This job runs only if the build workflow was successful.
   deploy-to-dev:
     name: Deploy to Development Environment
     runs-on: ubuntu-latest
-    # This condition ensures that the deployment only runs if the build workflow succeeded.
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
-    # Define environment variables for easy access
     env:
       AWS_REGION: us-east-1
       ECR_REPOSITORY: podinfo
-      # We use the SHA of the commit that triggered the build workflow as our image tag.
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
 
-    # Permissions required for AWS OIDC authentication
     permissions:
       id-token: write
       contents: read
@@ -32,6 +26,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # We need to check out the specific commit that triggered the build
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -40,60 +37,43 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           role-session-name: GitHubActionsDeploySession
 
-      - name: Get ECR Registry URL
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        
+      - name: Helper to get Lambda versions
+        id: get-lambda-version
+        run: |
+          # This is a placeholder for a more robust version management script
+          echo "VERSION=1" >> $GITHUB_OUTPUT
+          echo "VERSION_PLUS_ONE=2" >> $GITHUB_OUTPUT
+
       - name: Deploy to Lambda via CodeDeploy
         run: |
-          aws deploy create-deployment \
-            --application-name podinfo-lambda \
-            --deployment-group-name podinfo-lambda-dg \
-            --description "Deploying ${{ env.IMAGE_TAG }} to Lambda" \
-            --revision '{
-              "revisionType": "AppSpecContent",
-              "appSpecContent": {
-                "content": "{\n  \"version\": 0.0,\n  \"Resources\": [\n    {\n      \"podinfo-lambda\": {\n        \"Type\": \"AWS::Lambda::Function\",\n        \"Properties\": {\n          \"Name\": \"podinfo-lambda\",\n          \"Alias\": \"live\",\n          \"CurrentVersion\": \"${{ needs.get-lambda-version.outputs.VERSION }}\",\n          \"TargetVersion\": \"${{ needs.get-lambda-version.outputs.VERSION_PLUS_ONE }}\"\n        }\n      }\n    }\n  ]\n}",
-                "sha256": ""
-              }
-            }'
+          # This part remains complex and will be tested once the account is active
+          # We will likely need to adjust the AppSpec content based on real Lambda versions
+          echo "Skipping Lambda deployment for now..."
 
+      # --- GÜNCELLENMİŞ EC2 DAĞITIM ADIMI ---
       - name: Deploy to EC2 via CodeDeploy
-        id: deploy-ec2
         run: |
           aws deploy create-deployment \
             --application-name podinfo-ec2 \
             --deployment-group-name podinfo-ec2-blue-green-dg \
-            --description "Deploying ${{ env.IMAGE_TAG }} to EC2" \
-            --revision '{
-                "revisionType": "S3",
-                "s3Location": {
-                    "bucket": "${{ secrets.S3_BUCKET_FOR_CODEDEPLOY }}",
-                    "key": "appspec.yml",
-                    "bundleType": "YAML"
-                }
-            }'
+            --description "Deploying commit ${{ env.IMAGE_TAG }} to EC2" \
+            --revision '{"revisionType": "GitHub", "gitHubLocation": {"repository": "${{ github.repository }}", "commitId": "${{ env.IMAGE_TAG }}"}}'
+      # --- GÜNCELLENMİŞ ADIMIN SONU ---
 
-
-  # This job acts as a manual gate before deploying to production.
   approve-for-prod:
     name: Approve for Production
     runs-on: ubuntu-latest
-    needs: deploy-to-dev # This job runs only after the 'deploy-to-dev' job is successful.
+    needs: deploy-to-dev
     environment:
       name: production
     steps:
       - name: Manual approval step
         run: echo "Deployment to production approved. Proceeding..."
 
-  # This job deploys to the production environment after manual approval.
   deploy-to-prod:
     name: Deploy to Production Environment
     runs-on: ubuntu-latest
     needs: approve-for-prod
-    # The rest of this job would be very similar to 'deploy-to-dev',
-    # but would point to production CodeDeploy groups (e.g., podinfo-lambda-prod-dg)
-    # and would likely have its own set of secrets and variables.
     steps:
       - name: Placeholder for production deployment
         run: echo "Deploying to production..."

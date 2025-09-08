@@ -154,6 +154,8 @@ resource "aws_autoscaling_group" "main" {
   max_size            = 5
   min_size            = 2
   vpc_zone_identifier = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  default_cooldown    = 120
+  target_group_arns = [aws_lb_target_group.blue.arn]
   launch_template {
     id      = aws_launch_template.main.id
     version = "$Latest"
@@ -217,6 +219,7 @@ resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.secret_read.arn
 }
+
 # --- EC2 Auto Scaling Policy (Correct Method) ---
 # This policy automatically scales the number of EC2 instances based on the
 # average number of requests each instance receives from the ALB.
@@ -231,12 +234,7 @@ resource "aws_autoscaling_policy" "alb_requests_policy" {
       resource_label         = "${aws_lb.main.arn_suffix}/${aws_lb_target_group.blue.arn_suffix}"
     }
 
-    # The target value for the metric. ASG will add instances to keep
-    # the average requests per instance at or below this number.
     target_value = 100.0
 
-    # Cooldown periods prevent the group from scaling too frequently.
-    scale_in_cooldown  = 300 # 5 minutes
-    scale_out_cooldown = 120 # 2 minutes
   }
 }
