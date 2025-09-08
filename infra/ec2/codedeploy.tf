@@ -31,13 +31,11 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
     deployment_type   = "BLUE_GREEN"
   }
 
-  # Link the alarm to this deployment group
   alarm_configuration {
     alarms  = [aws_cloudwatch_metric_alarm.ec2_unhealthy_hosts.alarm_name]
     enabled = true
   }
 
-  // How CodeDeploy should handle traffic shifting and instance termination.
   blue_green_deployment_config {
     deployment_ready_option {
       action_on_timeout = "CONTINUE_DEPLOYMENT"
@@ -48,7 +46,6 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
     }
   }
 
-  // Connect CodeDeploy to our ALB and target groups.
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
@@ -63,7 +60,6 @@ resource "aws_codedeploy_deployment_group" "ec2_dg" {
     }
   }
 
-  // Automatically roll back if a deployment fails.
   auto_rollback_configuration {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]

@@ -26,11 +26,7 @@ resource "aws_lambda_function" "podinfo" {
   package_type  = "Image"
   timeout       = 30 // seconds
 
-  // For the initial setup, we use a public placeholder image.
-  // Our CI/CD pipeline will replace this with our own custom-built image URI during deployment.
   image_uri = "public.ecr.aws/lambda/python:3.9"
-  // 'publish = true' creates a new, numbered version of the function each time it's updated.
-  // This is required for CodeDeploy to manage versions.
   publish = true
 }
 
@@ -68,7 +64,5 @@ resource "aws_lambda_permission" "api_gw" {
 
 resource "aws_iam_role_policy_attachment" "lambda_secret_access" {
   role       = aws_iam_role.lambda_exec_role.name
-  # This is a managed policy, but for fine-grained control, you'd create your own
-  # similar to the EC2 stack. For simplicity, we'll attach a broad permission here.
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # Note: In production, create a read-only policy!
 }

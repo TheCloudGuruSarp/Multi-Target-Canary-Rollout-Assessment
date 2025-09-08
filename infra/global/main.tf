@@ -106,7 +106,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           stacked = false,
           region = "us-east-1",
           metrics = [
-            // CORRECTED METRIC DEFINITIONS FOR CWAGENT
             ["CWAgent", "cpu_usage_active", "AutoScalingGroupName", "podinfo-asg", { label = "CPU Usage %", stat = "Average" }],
             ["CWAgent", "mem_used_percent", "AutoScalingGroupName", "podinfo-asg", { label = "Memory Used %", stat = "Average" }]
           ]

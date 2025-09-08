@@ -183,8 +183,6 @@ data "aws_iam_policy_document" "secret_read_policy" {
     actions = [
       "secretsmanager:GetSecretValue"
     ]
-    # It's best practice to scope this down to the specific secret ARN
-    # For simplicity in this step, we'll allow access to secrets with a specific tag or path later.
     resources = [
       "*" # In a real prod environment, you would lock this down to the secret's ARN
     ]

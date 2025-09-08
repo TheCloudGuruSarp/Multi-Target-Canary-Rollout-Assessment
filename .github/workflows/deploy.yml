@@ -26,7 +26,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # We need to check out the specific commit that triggered the build
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS credentials
@@ -39,7 +38,6 @@ jobs:
       - name: Helper to get Lambda versions
         id: get-lambda-version
         run: |
-          # This is a placeholder for a more robust version management script
           echo "VERSION=1" >> $GITHUB_OUTPUT
           echo "VERSION_PLUS_ONE=2" >> $GITHUB_OUTPUT
 
@@ -58,7 +56,6 @@ jobs:
             --deployment-group-name podinfo-ec2-blue-green-dg \
             --description "Deploying commit ${{ env.IMAGE_TAG }} to EC2" \
             --revision '{"revisionType": "GitHub", "gitHubLocation": {"repository": "${{ github.repository }}", "commitId": "${{ env.IMAGE_TAG }}"}}'
-      # --- GÜNCELLENMİŞ ADIMIN SONU ---
 
   approve-for-prod:
     name: Approve for Production
