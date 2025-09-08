@@ -80,19 +80,21 @@ resource "aws_lb" "main" {
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 }
 resource "aws_lb_target_group" "blue" {
-  name     = "podinfo-blue-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "podinfo-blue-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
   health_check {
     path = "/healthz"
   }
 }
 resource "aws_lb_target_group" "green" {
-  name     = "podinfo-green-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "podinfo-green-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
   health_check {
     path = "/healthz"
   }
@@ -106,12 +108,50 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.blue.id
   }
 }
+resource "aws_iam_role" "ec2_role" {
+  name = "podinfo-ec2-instance-role"
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [{
+      Action    = "sts:AssumeRole",
+      Effect    = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+resource "aws_iam_role_policy_attachment" "ec2_ecr" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+data "aws_iam_policy_document" "secret_read_policy_doc" {
+  statement {
+    effect    = "Allow"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
+resource "aws_iam_policy" "secret_read_policy" {
+  name   = "podinfo-secret-read-policy"
+  policy = data.aws_iam_policy_document.secret_read_policy_doc.json
+}
+resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.secret_read_policy.arn
+}
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "podinfo-ec2-instance-profile"
+  role = aws_iam_role.ec2_role.name
+}
 resource "aws_launch_template" "main" {
-  name_prefix   = "podinfo-"
-  image_id      = var.ami_id
-  instance_type = "t3.micro"
-  user_data     = filebase64("${path.module}/user-data.sh")
+  name_prefix            = "podinfo-"
+  image_id               = var.ami_id
+  instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.ec2.id]
+  user_data              = filebase64("${path.module}/user-data.sh")
   iam_instance_profile {
     name = aws_iam_instance_profile.ec2_profile.name
   }
@@ -128,53 +168,6 @@ resource "aws_autoscaling_group" "main" {
     id      = aws_launch_template.main.id
     version = "$Latest"
   }
-}
-resource "aws_iam_role" "ec2_role" {
-  name = "podinfo-ec2-instance-role"
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17",
-    Statement = [{
-      Action    = "sts:AssumeRole",
-      Effect    = "Allow",
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
-}
-resource "aws_iam_role_policy_attachment" "ec2_ssm" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-}
-resource "aws_iam_role_policy_attachment" "ec2_ecr" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "podinfo-ec2-instance-profile"
-  role = aws_iam_role.ec2_role.name
-}
-data "aws_iam_policy_document" "secret_read_policy" {
-  statement {
-    sid    = "AllowSecretRead"
-    effect = "Allow"
-    actions = [
-      "secretsmanager:GetSecretValue"
-    ]
-    resources = [
-      "*"
-    ]
-  }
-}
-resource "aws_iam_policy" "secret_read" {
-  name   = "podinfo-secret-read-policy"
-  policy = data.aws_iam_policy_document.secret_read_policy.json
-}
-resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.secret_read.arn
 }
 resource "aws_autoscaling_policy" "alb_requests_policy" {
   name                   = "alb-requests-per-target-policy"
